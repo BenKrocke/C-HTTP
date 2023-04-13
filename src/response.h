@@ -10,6 +10,8 @@
 static char *HTTP = "HTTP/1.1";
 
 static char *STATUS_OK = "200 OK";
+static char *STATUS_NO_CONTENT = "204 No Content";
+static char *STATUS_CONTENT_TOO_LARGE = "413 Content Too Large";
 static char *STATUS_BAD_REQUEST = "400 Bad Request";
 static char *STATUS_NOT_FOUND = "404 Not Found";
 static char *STATUS_ERROR = "500 Internal Server Error";

@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "router.h"
 #include "request.h"
+#include "http_header.h"
 
 void sigchld_handler(int s) {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -109,6 +110,7 @@ void server_listen(int socket_descriptor) {
         size_t bytes = recv(accepted_descriptor, buffer, sizeof buffer - 1, 0);
         buffer[bytes] = '\0';
         struct http_request request = parse_request(buffer);
+
         char *response = router_process(request);
 
         ssize_t bytes_sent = send(accepted_descriptor, response, strlen(response), 0);
@@ -118,11 +120,10 @@ void server_listen(int socket_descriptor) {
             terminate("poop");
         };
 
-        // If connection:close, set true
-        bool should_close = 0;
-
-        if (should_close) {
+        struct http_header *connection = find_header(request.headers, "Connection");
+        if (connection != NULL && strcmp(connection->value, "close") == 0) {
             close(accepted_descriptor);
+            exit(1);
         }
     }
 }

@@ -18,11 +18,13 @@ struct response initialise_response() {
 
 void add_body(struct response *response, char *body) {
     response->body = body;
-    char content_length_value[256] = "";
-    snprintf(content_length_value, sizeof content_length_value, "%zu", strlen(body));
-    char *clvptr = malloc(strlen(content_length_value) + 1);
-    strcpy(clvptr, content_length_value);
-    response->headers = add_http_header(response->headers, "Content-Length", clvptr);
+    if (body != NULL) {
+        char content_length_value[256] = "";
+        snprintf(content_length_value, sizeof content_length_value, "%zu", strlen(body));
+        char *clvptr = malloc(strlen(content_length_value) + 1);
+        strcpy(clvptr, content_length_value);
+        response->headers = add_http_header(response->headers, "Content-Length", clvptr);
+    }
 }
 
 char *response_to_string(struct response *response) {
@@ -40,5 +42,6 @@ char *response_to_string(struct response *response) {
 
     char *str = malloc(strlen(rsp) + 1);
     strcpy(str, rsp);
+    delete_http_headers(response->headers);
     return str;
 }

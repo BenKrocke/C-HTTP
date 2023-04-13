@@ -10,16 +10,41 @@
 
 char *database = "Hello, World!";
 
+char *validate_request(struct http_request request) {
+    struct http_header *content_length = find_header(request.headers, "Content-Length");
+    if (content_length != NULL && atoi(content_length->value) > 1024 - 1) {
+        struct response response = initialise_response();
+        response.status = STATUS_CONTENT_TOO_LARGE;
+        return response_to_string(&response);
+    }
+
+    return NULL;
+}
+
 char *router_process(struct http_request request) {
+
     struct response response = initialise_response();
     if (request.method == GET) {
         add_body(&response, database);
-        response.status = STATUS_OK;
+        if (response.body == NULL) {
+            response.status = STATUS_NO_CONTENT;
+        } else {
+            response.status = STATUS_OK;
+        }
         return response_to_string(&response);
     } else if (request.method == POST) {
+        char *validation;
+        if ((validation = validate_request(request)) != NULL) {
+            return validation;
+        }
+
         database = request.body;
         add_body(&response, database);
-        response.status = STATUS_OK;
+        if (response.body == NULL) {
+            response.status = STATUS_NO_CONTENT;
+        } else {
+            response.status = STATUS_OK;
+        }
         return response_to_string(&response);
     } else if (request.method == HEAD) {
         response.status = STATUS_OK;
