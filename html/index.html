@@ -6,10 +6,22 @@
 </head>
 <body>
 <button id="get">Get</button>
+<input type="text" id="newVal"></input>
+<button id="post">Post</button>
 </body>
 <script>
     document.getElementById("get").addEventListener("click", (event) => {
         fetch("http://127.0.0.1:8000").then((res) => {
+            console.log(res);
+            return res.text()
+        }).then((final) => console.log(final)).catch((err) => console.log(err));
+    });
+    document.getElementById("post").addEventListener("click", (event) => {
+        var value = document.getElementById("newVal").value;
+        fetch("http://127.0.0.1:8000", {
+            method: 'POST',
+            body: value
+        }).then((res) => {
             console.log(res);
             return res.text()
         }).then((final) => console.log(final)).catch((err) => console.log(err));

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "request.h"
 #include "utils.h"
+#include "http_header.h"
 
 // https://github.com/jflaherty/ptrtut13/blob/master/md/prefacex.md
 // https://stackoverflow.com/questions/176409/build-a-simple-http-server-in-c
@@ -53,24 +54,17 @@ enum http_method parse_method(char *method) {
 struct http_header *parse_headers(char *headers) {
     int length = 0;
     char *header;
-    struct http_header *array = malloc(0);
-    struct http_header *temp;
+    struct http_header *first_header;
     while ((header = sep_by_str(&headers, "\r\n")) != NULL) {
-        struct http_header parsed_header;
         char *key = sep_by_str(&header, ": ");
-        parsed_header.key = key;
-        parsed_header.value = header;
-        length++;
-        temp = realloc(array, length * sizeof(struct http_header));
-        if (temp) {
-            array = temp;
-            array[length - 1] = parsed_header;
+        if (first_header == NULL) {
+            first_header = create_http_header(key, header);
         } else {
-            terminate("Memory problem");
+            first_header = add_http_header(first_header, key, header);
         }
     }
 
-    return array;
+    return first_header;
 }
 
 // TODO: Validation

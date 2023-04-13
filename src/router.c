@@ -5,22 +5,29 @@
 #include <string.h>
 #include "router.h"
 #include "utils.h"
+#include "response.h"
+#include "http_header.h"
 
 char *database = "Hello, World!";
 
 char *router_process(struct http_request request) {
-    char *response = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: 13\r\n\r\nHello, World!";
+    struct response response = initialise_response();
     if (request.method == GET) {
-        strlcat(response, database, strlen(response)); // TODO: does not work
-        return response;
+        add_body(&response, database);
+        response.status = STATUS_OK;
+        return response_to_string(&response);
     } else if (request.method == POST) {
         database = request.body;
-        strlcat(response, database, strlen(response));
-        return response;
+        add_body(&response, database);
+        response.status = STATUS_OK;
+        return response_to_string(&response);
     } else if (request.method == HEAD) {
-        return response;
+        response.status = STATUS_OK;
+        return response_to_string(&response);
     } else if (request.method == OPTIONS) {
-        return response;
+        response.status = STATUS_OK;
+        response.headers = add_http_header(response.headers, "Allow", "GET,POST,HEAD,OPTIONS");
+        return response_to_string(&response);
     } else {
         terminate("router");
     }

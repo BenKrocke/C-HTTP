@@ -17,10 +17,6 @@ static const char *HTTP_METHOD_POST = "POST";
 static const char *HTTP_METHOD_OPTIONS = "OPTIONS";
 static const char *HTTP_METHOD_HEAD = "HEAD";
 
-struct http_header {
-    char *key;
-    char *value;
-};
 
 struct http_request {
     enum http_method method;
