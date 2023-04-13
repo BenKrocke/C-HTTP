@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple App</title>
+</head>
+<body>
+<button id="get">Get</button>
+</body>
+<script>
+    document.getElementById("get").addEventListener("click", (event) => {
+        fetch("http://127.0.0.1:8000").then((res) => {
+            console.log(res);
+            return res.text()
+        }).then((final) => console.log(final)).catch((err) => console.log(err));
+    });
+</script>
+</html>
