@@ -4,8 +4,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "string_constants.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include "response.h"
 #include "http_header.h"
 
@@ -21,21 +21,21 @@ void add_body(struct response *response, char *body) {
     if (body != NULL) {
         char content_length_value[256] = "";
         snprintf(content_length_value, sizeof content_length_value, "%zu", strlen(body));
-        char *clvptr = malloc(strlen(content_length_value) + 1);
-        strcpy(clvptr, content_length_value);
-        response->headers = add_http_header(response->headers, "Content-Length", clvptr);
+        char *strlen = strdup(content_length_value);
+        response->headers = add_http_header(response->headers, "Content-Length", strlen);
+        free(strlen);
     }
 }
 
 char *response_to_string(struct response *response) {
-    char rsp[4096] = ""; // TODO: Increase size
-    strcat(strcat(strcat(strcat(rsp, response->version), " "), response->status), "\r\n");
+    char rsp[4096] = "";
+    strcat(strcat(strcat(strcat(rsp, response->version), SPACE), response->status), CRLF);
     struct http_header *current_header = response->headers;
     while (current_header != NULL) {
-        strcat(strcat(strcat(strcat(rsp, current_header->key), ": "), current_header->value), "\r\n");
+        strcat(strcat(strcat(strcat(rsp, current_header->key), COLON_SPACE), current_header->value), CRLF);
         current_header = current_header->next;
     }
-    strcat(rsp, "\r\n");
+    strcat(rsp, CRLF);
     if (response->body != NULL) {
         strcat(rsp, response->body);
     }

@@ -13,12 +13,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <sys/fcntl.h>
-#include <stdbool.h>
 #include "utils.h"
 #include "router.h"
 #include "request.h"
 #include "http_header.h"
+#include "string_constants.h"
 
 void sigchld_handler(int s) {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -51,7 +50,7 @@ void initialise_signals() {
 int server_launch() {
     int socket_descriptor, addrinfo_result;
     int yes = 1;
-    struct addrinfo *res;
+    struct addrinfo *res, *current;
     struct addrinfo hints;
 
     hints = initialise_hints();
@@ -60,18 +59,23 @@ int server_launch() {
         exit(1);
     }
 
-    // TODO: Walk through the "res" linked list and find the first suitable instead of assuming the first will be correct
-    socket_descriptor = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (socket_descriptor == -1) {
-        terminate("socket");
-    }
+    for (current = res; current != NULL; current = current->ai_next) {
+        if ((socket_descriptor = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+            perror("socket");
+            continue;
+        }
 
-    if (setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) == -1) {
-        terminate("setsockopt");
-    }
+        if (setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+            terminate("setsockopt");
+        }
 
-    if (bind(socket_descriptor, res->ai_addr, res->ai_addrlen) == -1) {
-        terminate("bind");
+        if (bind(socket_descriptor, res->ai_addr, res->ai_addrlen) == -1) {
+            close(socket_descriptor);
+            perror("bind");
+            continue;
+        }
+
+        break;
     }
 
     freeaddrinfo(res);
@@ -106,24 +110,29 @@ void server_listen(int socket_descriptor) {
 
     while (1) {
         char buffer[1024];
-        // TODO: Account for multiple fragments
         size_t bytes = recv(accepted_descriptor, buffer, sizeof buffer - 1, 0);
-        buffer[bytes] = '\0';
+        buffer[bytes] = NULL_TERMINATOR;
         struct http_request request = parse_request(buffer);
 
         char *response = router_process(request);
+
 
         ssize_t bytes_sent = send(accepted_descriptor, response, strlen(response), 0);
         if (bytes_sent == -1) {
             terminate("send");
         } else if (bytes_sent < strlen(response)) {
-            terminate("poop");
+            terminate("send");
         };
+
+        free(response);
 
         struct http_header *connection = find_header(request.headers, "Connection");
         if (connection != NULL && strcmp(connection->value, "close") == 0) {
             close(accepted_descriptor);
+            delete_http_headers(request.headers);
             exit(1);
+        } else {
+            delete_http_headers(request.headers);
         }
     }
 }

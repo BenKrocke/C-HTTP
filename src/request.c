@@ -4,15 +4,10 @@
 
 #include <string.h>
 #include <printf.h>
-#include <stdlib.h>
 #include "request.h"
 #include "utils.h"
 #include "http_header.h"
-
-// https://github.com/jflaherty/ptrtut13/blob/master/md/prefacex.md
-// https://stackoverflow.com/questions/176409/build-a-simple-http-server-in-c
-// TODO: Buffered reader?
-// https://www.jmarshall.com/easy/http/
+#include "string_constants.h"
 
 char *sep_by_str(char **string_ptr, char *delim) {
     if (*string_ptr == NULL) {
@@ -28,7 +23,7 @@ char *sep_by_str(char **string_ptr, char *delim) {
     if (new_ptr == NULL) {
         *string_ptr = NULL;
     } else {
-        *new_ptr = '\0';
+        *new_ptr = NULL_TERMINATOR;
         new_ptr = new_ptr + strlen(delim);
 
         *string_ptr = new_ptr;
@@ -52,11 +47,10 @@ enum http_method parse_method(char *method) {
 }
 
 struct http_header *parse_headers(char *headers) {
-    int length = 0;
     char *header;
-    struct http_header *first_header;
-    while ((header = sep_by_str(&headers, "\r\n")) != NULL) {
-        char *key = sep_by_str(&header, ": ");
+    struct http_header *first_header = NULL;
+    while ((header = sep_by_str(&headers, CRLF)) != NULL) {
+        char *key = sep_by_str(&header, COLON_SPACE);
         if (first_header == NULL) {
             first_header = create_http_header(key, header);
         } else {
@@ -67,19 +61,17 @@ struct http_header *parse_headers(char *headers) {
     return first_header;
 }
 
-// TODO: Validation
 struct http_request parse_request(char *request) {
     struct http_request result;
     char *status_line, *headers, *body = NULL;
-    status_line = sep_by_str(&request, "\r\n");
-    headers = sep_by_str(&request, "\r\n\r\n");
-    if (*request != '\0') {
+    status_line = sep_by_str(&request, CRLF);
+    headers = sep_by_str(&request, CRLFCRLF);
+    if (*request != NULL_TERMINATOR) {
         body = request;
     }
 
-    // Parse data
-    result.method = parse_method(strsep(&status_line, " "));
-    result.path = strsep(&status_line, " ");
+    result.method = parse_method(strsep(&status_line, SPACE));
+    result.path = strsep(&status_line, SPACE);
     strncpy(result.version, status_line, 9);
 
     result.headers = parse_headers(headers);

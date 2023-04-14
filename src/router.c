@@ -22,7 +22,6 @@ char *validate_request(struct http_request request) {
 }
 
 char *router_process(struct http_request request) {
-
     struct response response = initialise_response();
     if (request.method == GET) {
         add_body(&response, database);
@@ -56,4 +55,5 @@ char *router_process(struct http_request request) {
     } else {
         terminate("router");
     }
+    return "";
 }
